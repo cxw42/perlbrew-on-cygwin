@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# - Download the "Source" package for perl from the Cygwin installer
+# - Copy the contents of /usr/src/perl-<whatever>.src/ to a working directory
+# - Grab the the custom cygport file that sets PFX to the place it will
+#   eventually be installed.
+# - In the working directory, proceed as below.
+
+# Note: no leading // on Cygwin!  Those are interpreted as UNC.
+
+cygport perlcygbrew-5.26.2-1.cygport prep
+cygport perlcygbrew-5.26.2-1.cygport compile
+cygport perlcygbrew-5.26.2-1.cygport test
+
+cygport perlcygbrew-5.26.2-1.cygport install
+    # Installs to perlcygbrew-5.26.2-1.x86_64/inst
+
+# Make sure we're not using a perlcygbrew
+perlbrew list
+perlbrew use perl-5.26.1
+
+cd "perlcygbrew-5.26.2-1.x86_64/inst${HOME}/perl5/perlbrew/perls/"
+mv perlcygbrew-5.26.2-1/ ~/perl5/perlbrew/perls/
+
+perlbrew list
+perlbrew use perlcygbrew-5.26.2-1
+
+which perl
+perl -V
+

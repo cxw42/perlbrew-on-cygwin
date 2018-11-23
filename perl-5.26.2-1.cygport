@@ -1,0 +1,155 @@
+#!/bin/sh
+NAME="perl"
+VERSION="5.26.2"
+RELEASE="1"
+NO_PERL_DEPS=1
+CATEGORY="Interpreters Perl"
+SUMMARY="Perl programming language interpreter"
+DESCRIPTION="${SUMMARY}
+
+Perl is a general-purpose programming language originally developed
+for text manipulation and now used for a wide range of tasks including
+system administration, web development, network programming, GUI
+development, and more."
+
+HOMEPAGE="http://www.perl.org/"
+SRC_URI="mirror://cpan/src/5.0/${P}.tar.xz"
+# RC tarball (only for test releases)
+#SRC_URI="mirror://cpan/src/5.0/${PF/-0./-RC}.tar.xz"
+#SRC_DIR="${PF/-0./-RC}"
+#TESTRELEASE=1
+#
+#  perl.636efde.patch
+#  perl.03e4d23.patch
+#  perl.cygwin_autorebase.patch
+PATCH_URI="
+  perl.cygwin_README.patch
+  perl.cygwin-auto-image-base.patch
+  perl.cygwin-hints.patch
+  perl.cygwin-Configure-libsearch.patch
+  perl.cygwin-Configure-libpth.patch
+  perl.cygwin-Win32.patch
+  perl.cygwin-File-Path.patch
+  perl.cygwin-patchlevel.patch
+"
+
+#MAKEOPTS+=" -j1"
+
+PERLV=${PV%.*}
+PERL_V=${PERLV//./_}
+PERLPV=${PV//-RC[0-9]/}
+ARCHNAME="${ARCH}-cygwin-threads${ARCH_i686+-64int}"
+PFX="usr"
+VPFX="usr"
+SPFX="usr/local"
+
+PKG_NAMES="perl perl_base perl_manpages perl_pods perl_autorebase"
+perl_base_DESCRIPTION="${SUMMARY}
+
+Minimal install intended for use by Base packages."
+perl_base_CONTENTS="${PFX}/bin/perl.exe ${PFX}/bin/perl${PERLPV}.exe  ${PFX}/bin/cygperl${PERL_V}.dll ${PFX}/share/doc"
+for i in AutoLoader.pm AutoSplit.pm B CPAN/Meta{,.pm} Carp{,.pm} Class Config \
+	 Digest{,.pm} DirHandle.pm Exporter{,.pm} \
+	 ExtUtils/{Liblist,MakeMaker}{,.pm} \
+	 ExtUtils/{Embed,Manifest,Miniperl,Mksymlists,MM{,_*},MY}.pm File \
+	 FileHandle.pm FindBin.pm Getopt I18N IO/Socket/IP.pm IPC \
+	 Locale/Maketext{,/Simple}.pm Math/Big{Int,Float}{,.pm} Module \
+	 Params/Check.pm Parse/CPAN/Meta.pm PerlIO{,.pm} Pod/Simple{,.pm} \
+	 Pod/{Usage,Text,Escapes,Find,Parser,InputObjects}.pm Safe.pm \
+	 SelectSaver.pm SelfLoader.pm Symbol.pm Term/{ANSIColor,Cap}.pm \
+	 Test/Builder{,.pm} Test/More.pm Text Tie/Hash.pm Tie/{,Std}Handle.pm \
+	 Time/Local.pm UNIVERSAL.pm Win32API XSLoader.pm base.pm bytes.pm \
+	 bytes_heavy.pl constant.pm feature.pm fields.pm integer.pm locale.pm \
+	 overload overload.pm overloading.pm parent.pm strict.pm \
+	 unicore/Name.pm unicore/{Heavy,Name}.pl utf8.pm utf8_heavy.pl vars.pm \
+	 version{,/regex}.pm warnings{,.pm} ; do
+    perl_base_CONTENTS+=" ${VPFX}/share/perl5/${PERLV}/${i}"
+done
+for i in B.pm Config.pm Config_heavy.pl Cwd.pm Data Digest DynaLoader.pm \
+	 Encode{,.pm} Errno.pm Fcntl.pm File I18N IO.pm \
+	 IO/{Dir,File,Handle,Pipe,Poll,Seekable,Select}.pm IO/Socket{,.pm} List \
+	 MIME Opcode.pm POSIX.pm PerlIO Scalar Socket.pm Storable.pm Time \
+	 Win32.pm Win32API attributes.pm lib.pm mro.pm re.pm ; do
+    perl_base_CONTENTS+=" ${VPFX}/lib/perl5/${PERLV}/${ARCHNAME}/${i}"
+done
+for i in B Cwd Data Digest Encode Fcntl File Hash I18N IO List MIME POSIX \
+	 PerlIO Socket Storable Time Win32{,API} mro ; do
+    perl_base_CONTENTS+=" ${VPFX}/lib/perl5/${PERLV}/${ARCHNAME}/auto/${i}"
+done
+perl_manpages_DESCRIPTION="${SUMMARY}
+
+Documentation formatted as manpages."
+perl_manpages_CONTENTS="${VPFX}/share/man"
+perl_pods_DESCRIPTION="${SUMMARY}
+
+Documentation formatted as Perl PODs (for use with perldoc)."
+perl_pods_CONTENTS="${VPFX}/share/perl5/${PERLV}/pods"
+perl_autorebase_DESCRIPTION="${SUMMARY}
+
+Control for autorebase via setup postinstall."
+perl_autorebase_CONTENTS="var"
+perl_CONTENTS="usr"
+perl_REQUIRES=perl_autorebase
+for i in $perl_base_CONTENTS $perl_manpages_CONTENTS $perl_pods_CONTENTS $perl_autorebase_CONTENTS ; do
+    perl_CONTENTS="--exclude=$i ${perl_CONTENTS}"
+done
+
+CFLAGS=${CFLAGS/-Wp,/}
+
+src_compile() {
+    cd ${B}
+    find .. -type d -print0 | xargs -0 /usr/bin/setfacl -k
+    find .. -type f -print0 | xargs -0 /usr/bin/setfacl -b
+    cat > Policy.sh <<-_EOF
+	#!/bin/sh
+	prefix="/${PFX}"
+	siteprefix="/${SPFX}"
+	vendorprefix="/${VPFX}"
+
+	vendorman1dir="/${VPFX}/share/man/man1"
+	vendorman3dir="/${VPFX}/share/man/man3"
+	html1dir="/${PFX}/share/doc/perl/html/html1"
+	html3dir="/${PFX}/share/doc/perl/html/html3"
+	sitehtml1dir="/${SPFX}/share/doc/perl/html/html1"
+	sitehtml3dir="/${SPFX}/share/doc/perl/html/html3"
+	vendorhtml1dir="/${VPFX}/share/doc/perl/html/html1"
+	vendorhtml3dir="/${VPFX}/share/doc/perl/html/html3"
+
+	archname=${ARCHNAME}
+	privlib="/${PFX}/share/perl5/${PERLV}"
+	sitelib="/${SPFX}/share/perl5/site_perl/${PERLV}"
+	vendorlib="/${VPFX}/share/perl5/vendor_perl/${PERLV}"
+	archlib="/${PFX}/lib/perl5/${PERLV}/${ARCHNAME}"
+	sitearch="/${SPFX}/lib/perl5/site_perl/${PERLV}/${ARCHNAME}"
+	vendorarch="/${VPFX}/lib/perl5/vendor_perl/${PERLV}/${ARCHNAME}"
+
+	sitebin="/${SPFX}/bin"
+	sitescript="/${SPFX}/bin"
+	_EOF
+    ${S}/Configure -des -Dprefix=/usr -Dmksymlinks \
+	-Darchname=${ARCHNAME} \
+	-Dlibperl=cygperl${PERL_V}.dll \
+	-Dcc=${CC} -Dld=${CXX} -Accflags="$CFLAGS -fwrapv"
+    cygmake
+}
+
+src_install() {
+    cd ${B}
+    cyginstall
+    # prevent xsinit-generated code from referencing boot_Win32CORE
+    sed -i -e "s/^\(static_ext\)=.*/\1=' '/" \
+	${D}/usr/lib/perl5/${PERLV}/${ARCHNAME}/Config_heavy.pl
+
+    dodir /var/lib/rebase/dynpath.d
+    cat > ${D}/var/lib/rebase/dynpath.d/perl <<-_EOF
+	/${SPFX}/lib/perl5/site_perl
+	_EOF
+}
+
+src_test() {
+    cd ${B}
+    if defined ARCH_i686; then
+	find ${B} -name \*.dll | rebase -OT -
+    fi
+    cygtest
+}
