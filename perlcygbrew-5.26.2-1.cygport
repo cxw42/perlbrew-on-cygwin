@@ -1,5 +1,5 @@
 #!/bin/sh
-NAME="perl"
+NAME="perlcygbrew"
 VERSION="5.26.2"
 RELEASE="1"
 NO_PERL_DEPS=1
@@ -13,10 +13,11 @@ system administration, web development, network programming, GUI
 development, and more."
 
 HOMEPAGE="http://www.perl.org/"
-SRC_URI="mirror://cpan/src/5.0/${P}.tar.xz"
+SRC_URI="mirror://cpan/src/5.0/perl-5.26.2.tar.xz"
 # RC tarball (only for test releases)
 #SRC_URI="mirror://cpan/src/5.0/${PF/-0./-RC}.tar.xz"
 #SRC_DIR="${PF/-0./-RC}"
+SRC_DIR="perl-5.26.2"
 #TESTRELEASE=1
 #
 #  perl.636efde.patch
@@ -39,9 +40,9 @@ PERLV=${PV%.*}
 PERL_V=${PERLV//./_}
 PERLPV=${PV//-RC[0-9]/}
 ARCHNAME="${ARCH}-cygwin-threads${ARCH_i686+-64int}"
-PFX="usr"
-VPFX="usr"
-SPFX="usr/local"
+PFX=~/perl5/perlbrew/perls/${PF}
+VPFX="$PFX"	# There is only one bin/ in perlbrew; no need to split
+SPFX="$PFX"	# site and vendor.
 
 PKG_NAMES="perl perl_base perl_manpages perl_pods perl_autorebase"
 perl_base_DESCRIPTION="${SUMMARY}
@@ -102,31 +103,31 @@ src_compile() {
     find .. -type f -print0 | xargs -0 /usr/bin/setfacl -b
     cat > Policy.sh <<-_EOF
 	#!/bin/sh
-	prefix="/${PFX}"
-	siteprefix="/${SPFX}"
-	vendorprefix="/${VPFX}"
+	prefix="${PFX}"
+	siteprefix="${SPFX}"
+	vendorprefix="${VPFX}"
 
-	vendorman1dir="/${VPFX}/share/man/man1"
-	vendorman3dir="/${VPFX}/share/man/man3"
-	html1dir="/${PFX}/share/doc/perl/html/html1"
-	html3dir="/${PFX}/share/doc/perl/html/html3"
-	sitehtml1dir="/${SPFX}/share/doc/perl/html/html1"
-	sitehtml3dir="/${SPFX}/share/doc/perl/html/html3"
-	vendorhtml1dir="/${VPFX}/share/doc/perl/html/html1"
-	vendorhtml3dir="/${VPFX}/share/doc/perl/html/html3"
+	#vendorman1dir="/${VPFX}/share/man/man1"
+	#vendorman3dir="/${VPFX}/share/man/man3"
+	#html1dir="/${PFX}/share/doc/perl/html/html1"
+	#html3dir="/${PFX}/share/doc/perl/html/html3"
+	#sitehtml1dir="/${SPFX}/share/doc/perl/html/html1"
+	#sitehtml3dir="/${SPFX}/share/doc/perl/html/html3"
+	#vendorhtml1dir="/${VPFX}/share/doc/perl/html/html1"
+	#vendorhtml3dir="/${VPFX}/share/doc/perl/html/html3"
 
 	archname=${ARCHNAME}
-	privlib="/${PFX}/share/perl5/${PERLV}"
-	sitelib="/${SPFX}/share/perl5/site_perl/${PERLV}"
-	vendorlib="/${VPFX}/share/perl5/vendor_perl/${PERLV}"
-	archlib="/${PFX}/lib/perl5/${PERLV}/${ARCHNAME}"
-	sitearch="/${SPFX}/lib/perl5/site_perl/${PERLV}/${ARCHNAME}"
-	vendorarch="/${VPFX}/lib/perl5/vendor_perl/${PERLV}/${ARCHNAME}"
+	#privlib="/${PFX}/share/perl5/${PERLV}"
+	#sitelib="/${SPFX}/share/perl5/site_perl/${PERLV}"
+	#vendorlib="/${VPFX}/share/perl5/vendor_perl/${PERLV}"
+	#archlib="/${PFX}/lib/perl5/${PERLV}/${ARCHNAME}"
+	#sitearch="/${SPFX}/lib/perl5/site_perl/${PERLV}/${ARCHNAME}"
+	#vendorarch="/${VPFX}/lib/perl5/vendor_perl/${PERLV}/${ARCHNAME}"
 
-	sitebin="/${SPFX}/bin"
-	sitescript="/${SPFX}/bin"
+	#sitebin="/${SPFX}/bin"
+	#sitescript="/${SPFX}/bin"
 	_EOF
-    ${S}/Configure -des -Dprefix=/usr -Dmksymlinks \
+    ${S}/Configure -des -Dprefix=${PFX} -Dmksymlinks \
 	-Darchname=${ARCHNAME} \
 	-Dlibperl=cygperl${PERL_V}.dll \
 	-Dcc=${CC} -Dld=${CXX} -Accflags="$CFLAGS -fwrapv"
@@ -138,12 +139,13 @@ src_install() {
     cyginstall
     # prevent xsinit-generated code from referencing boot_Win32CORE
     sed -i -e "s/^\(static_ext\)=.*/\1=' '/" \
-	${D}/usr/lib/perl5/${PERLV}/${ARCHNAME}/Config_heavy.pl
+		$(find ${D} -name Config_heavy.pl)
+	#${D}/usr/lib/perl5/${PERLV}/${ARCHNAME}/Config_heavy.pl
 
-    dodir /var/lib/rebase/dynpath.d
-    cat > ${D}/var/lib/rebase/dynpath.d/perl <<-_EOF
-	/${SPFX}/lib/perl5/site_perl
-	_EOF
+    #dodir /var/lib/rebase/dynpath.d
+    #cat > ${D}/var/lib/rebase/dynpath.d/perl <<-_EOF
+	#/${SPFX}/lib/perl5/site_perl
+	#_EOF
 }
 
 src_test() {
